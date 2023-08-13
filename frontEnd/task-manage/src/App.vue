@@ -19,9 +19,13 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import axios from "axios";
 import TaskInputForm from "./components/TaskInputForm";
 import TaskList from "./components/TaskList.vue";
+
+//const API_BASE_URL = process.env.VUE_APP_API_BASE_URL;
+const API_BASE_URL = "http://localhost:3000";
 
 export default {
   name: "App",
@@ -30,35 +34,76 @@ export default {
     TaskList,
   },
   setup() {
-    const tasks = ref([
-      { id: 1, title: "asdf", description: "aaaa" },
-      { id: 2, title: "ddd", description: "ddd" },
-    ]);
-    const selectedTask = ref({ title: "", description: "" }); // New ref for the selected task
+    const tasks = ref([]);
+    const selectedTask = ref({ title: "", description: "" });
 
-    const addTask = (task) => {
-      if (task.title && task.description) {
-        const taskToAdd = {
-          id: Date.now(),
-          title: task.title,
-          description: task.description,
-        };
-        tasks.value.push(taskToAdd);
+    const addTask = async (task) => {
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var raw = JSON.stringify({
+        title: "Task3",
+        description: "Description 3",
+      });
+
+      var requestOptions = {
+        method: "POST",
+        headers: myHeaders,
+        body: raw,
+        redirect: "follow",
+      };
+
+      fetch("http://localhost:3000/tasks", requestOptions)
+        .then((response) => response.text())
+        .then((result) => console.log(result))
+        .catch((error) => console.log("error", error));
+      //  try {
+      //    const response = await axios.post(`http://localhost:3000/tasks`, task);
+      //    tasks.value.push(response.data);
+      //    selectedTask.value = { title: "", description: "" };
+      //  } catch (error) {
+      //    console.error("Error adding task:", error);
+      //  }
+    };
+
+    const deleteTask = async (taskToDelete) => {
+      try {
+        await axios.delete(`${API_BASE_URL}/tasks/${taskToDelete.id}`);
+        tasks.value = tasks.value.filter((task) => task.id !== taskToDelete.id);
+      } catch (error) {
+        console.error("Error deleting task:", error);
       }
     };
 
-    const deleteTask = (taskToDelete) => {
-      tasks.value = tasks.value.filter((task) => task.id !== taskToDelete.id);
+    const editTask = async (taskToEdit) => {
+      selectedTask.value = { ...taskToEdit };
+      try {
+        const response = await axios.put(
+          `${API_BASE_URL}/tasks/${taskToEdit.id}`,
+          taskToEdit
+        );
+        const index = tasks.value.findIndex(
+          (task) => task.id === taskToEdit.id
+        );
+        tasks.value[index] = response.data;
+      } catch (error) {
+        console.error("Error editing task:", error);
+      }
     };
 
-    const editTask = (taskToEdit) => {
-      selectedTask.value = { ...taskToEdit }; // Update the selectedTask ref
-      tasks.value = tasks.value.filter((task) => task.id !== taskToEdit.id);
-    };
+    // Fetch tasks when the component is mounted
+    onMounted(async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/tasks`);
+        tasks.value = response.data;
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      }
+    });
 
     return {
       tasks,
-      selectedTask, // Include selectedTask in the return
+      selectedTask,
       addTask,
       deleteTask,
       editTask,
