@@ -1,21 +1,19 @@
 import express, { Request, Response } from 'express';
 import db from './db';
-const corsMiddleware = require('restify-cors-middleware2');
+const cors = require('cors');
 const app = express();
 const PORT = 3000;
 
-// Set up CORS middleware
-const cors = corsMiddleware({
-  origins: ['http://localhost:3000/tasks'], // allows all origins. In production, you should list specific domains
-  allowHeaders: ['API-Token'],
-  exposeHeaders: ['API-Token-Expiry'],
-});
-
-app.use(cors.preflight);
-app.use(cors.actual);
+const corsOptions = {
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
-
+console.log('start');
 interface Task {
   id: number;
   title: string;
@@ -23,7 +21,7 @@ interface Task {
 }
 
 // GET all tasks
-app.get('/tasks', async (req: Request, res: Response) => {
+app.get('/tasks', cors(corsOptions), async (req: Request, res: Response) => {
   try {
     const tasks = await db.any('SELECT * FROM tasks');
     res.json(tasks);
@@ -33,7 +31,7 @@ app.get('/tasks', async (req: Request, res: Response) => {
 });
 
 // GET a specific task by ID
-app.get('/tasks/:id', async (req: Request, res: Response) => {
+app.get('/tasks/:id', cors(corsOptions), async (req: Request, res: Response) => {
   try {
     const task = await db.oneOrNone('SELECT * FROM tasks WHERE id = $1', [parseInt(req.params.id)]);
     if (!task) return res.status(404).json({ message: 'Task not found' });
@@ -44,8 +42,9 @@ app.get('/tasks/:id', async (req: Request, res: Response) => {
 });
 
 // POST a new task
-app.post('/tasks', async (req: Request, res: Response) => {
+app.post('/tasks', cors(corsOptions), async (req: Request, res: Response) => {
   const { title, description } = req.body;
+
   // Check if title and description are provided
   if (!title || !description) {
     return res.status(400).json({ error: 'Title and description are required' });
@@ -67,7 +66,7 @@ app.post('/tasks', async (req: Request, res: Response) => {
 });
 
 // PUT (update) a task by ID
-app.put('/tasks/:id', async (req: Request, res: Response) => {
+app.put('/tasks/:id', cors(corsOptions), async (req: Request, res: Response) => {
   try {
     const updatedTask = await db.oneOrNone(
       'UPDATE tasks SET title = $1, description = $2 WHERE id = $3 RETURNING *',
@@ -81,7 +80,7 @@ app.put('/tasks/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE a task by ID
-app.delete('/tasks/:id', async (req: Request, res: Response) => {
+app.delete('/tasks/:id', cors(corsOptions), async (req: Request, res: Response) => {
   try {
     const result = await db.result('DELETE FROM tasks WHERE id = $1', [parseInt(req.params.id)]);
     if (!result.rowCount) return res.status(404).json({ message: 'Task not found' });

@@ -7,7 +7,7 @@ const connection = {
   port: 5432,
   database: 'tasksdb',
   user: 'edgarcandales',
-  password: 'test1',
+  password: '***',
 };
 
 const db = pgp(connection);

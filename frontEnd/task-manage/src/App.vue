@@ -38,32 +38,15 @@ export default {
     const selectedTask = ref({ title: "", description: "" });
 
     const addTask = async (task) => {
-      var myHeaders = new Headers();
-      myHeaders.append("Content-Type", "application/json");
+      try {
+        console.log("try", task);
 
-      var raw = JSON.stringify({
-        title: "Task3",
-        description: "Description 3",
-      });
-
-      var requestOptions = {
-        method: "POST",
-        headers: myHeaders,
-        body: raw,
-        redirect: "follow",
-      };
-
-      fetch("http://localhost:3000/tasks", requestOptions)
-        .then((response) => response.text())
-        .then((result) => console.log(result))
-        .catch((error) => console.log("error", error));
-      //  try {
-      //    const response = await axios.post(`http://localhost:3000/tasks`, task);
-      //    tasks.value.push(response.data);
-      //    selectedTask.value = { title: "", description: "" };
-      //  } catch (error) {
-      //    console.error("Error adding task:", error);
-      //  }
+        const response = await axios.post(`http://localhost:3000/tasks`, task);
+        tasks.value.push(response.data);
+        selectedTask.value = { title: "", description: "" };
+      } catch (error) {
+        console.error("Error adding task:", error);
+      }
     };
 
     const deleteTask = async (taskToDelete) => {
